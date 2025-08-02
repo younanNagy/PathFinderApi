@@ -1,0 +1,5 @@
+celery==5.5.3
+Django==5.2.4
+djangorestframework==3.16.0
+tasks==2.8.0
+utils==1.0.2

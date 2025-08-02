@@ -1,25 +1,26 @@
 version: '3.9'
 
 services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: pathfinder_db
+      POSTGRES_USER: pathfinder_user
+      POSTGRES_PASSWORD: pathfinder_pass
+    ports:
+      - "5432:5432"
+
   web:
     build: .
-    command: bash -c "chmod +x migration-init.sh && ./migration-init.sh && python manage.py runserver 0.0.0.0:8000"
+    command: gunicorn PathfinderApi.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     depends_on:
       - db
-      - redis
-
-  db:
-    image: postgres:14
     environment:
-      POSTGRES_DB: graph_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      - DB_HOSTNAME=db
 
   redis:
     image: redis:7
