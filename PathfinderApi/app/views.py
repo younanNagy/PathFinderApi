@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Node
 from celery.result import AsyncResult
+from .PathService import findPath
+from .tasks import slow_find_path_task
+from django.conf import settings
 
 class CreateNode(APIView):
     def post(self, request):
@@ -20,7 +23,6 @@ class CreateNode(APIView):
             node.child = child
             node.save()
         return Response({
-            'id': str(node.id),
             'name': node.name,
             'child': node.child.name if node.child else None
         }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
@@ -34,6 +36,7 @@ class FindPath(APIView):
 
 class SlowFindPath(APIView):
     def post(self, request):
+        print(settings.CELERY_BROKER_URL)
         from_node = request.data.get('FromNode')
         to_node = request.data.get('ToNode')
         task = slow_find_path_task.delay(from_node, to_node)

@@ -4,13 +4,9 @@ from .PathService import findPath
 
 @shared_task(bind=True)
 def slow_find_path_task(self, from_node_name, to_node_name):
-    """
-    Celery task that simulates slow path finding by sleeping for 5 seconds
-    then calling the FindPath logic
-    """
     try:
         # Simulate slow processing
-        sleep(5)
+        sleep(15)
         
         # Call the actual path finding logic
         result = findPath(from_node_name, to_node_name)
