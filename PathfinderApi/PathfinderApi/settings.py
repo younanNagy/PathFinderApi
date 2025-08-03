@@ -65,16 +65,20 @@ WSGI_APPLICATION = 'PathfinderApi.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'pathfinder_db',
-        'USER': 'pathfinder_user',
-        'PASSWORD': 'pathfinder_pass',
-        'HOST': os.getenv('DB_HOSTNAME', 'localhost'), 
+        'NAME': os.getenv('DB_NAME','pathfinder_db'),
+        'USER': os.getenv('DB_USER','pathfinder_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD','pathfinder_pass'),
+        'HOST': os.getenv('DB_HOST', 'localhost'), 
         'PORT': '5432',
     }
 }
 
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
 
 # Password validation

@@ -1,37 +1,93 @@
 version: '3.9'
 
 services:
+  # PostgreSQL Database
   db:
     image: postgres:15
+    container_name: pathfinder_db
     environment:
       POSTGRES_DB: pathfinder_db
       POSTGRES_USER: pathfinder_user
       POSTGRES_PASSWORD: pathfinder_pass
     ports:
       - "5432:5432"
+    networks:
+      - pathfinder_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: pathfinder_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - pathfinder_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Django Web Application
   web:
     build: .
-    command: gunicorn PathfinderApi.wsgi:application --bind 0.0.0.0:8000
+    container_name: pathfinder_web
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
     ports:
       - "8000:8000"
-    depends_on:
-      - db
     environment:
-      - DB_HOSTNAME=db
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-dev-key-change-in-production
+      - DB_NAME=pathfinder_db
+      - DB_USER=pathfinder_user
+      - DB_PASSWORD=pathfinder_pass
+      - DB_HOST=db
+      - DB_PORT=5432
+      - CELERY_BROKER_URL=redis://pathfinder_redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://pathfinder_redis:6379/0
+      - SKIP_MIGRATIONS=false
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pathfinder_network
 
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-
-  celery:
+  # Celery Worker
+  celery_worker:
     build: .
-    command: celery -A your_project_name worker --loglevel=info
+    container_name: pathfinder_celery_worker
+    command: celery -A app worker --loglevel=info
     volumes:
       - .:/app
+    environment:
+    - DEBUG=True
+    - SECRET_KEY=django-insecure-dev-key-change-in-production
+    - DB_NAME=pathfinder_db
+    - DB_USER=pathfinder_user
+    - DB_PASSWORD=pathfinder_pass
+    - DB_HOST=db
+    - DB_PORT=5432
+    - CELERY_BROKER_URL=redis://pathfinder_redis:6379/0
+    - CELERY_RESULT_BACKEND=redis://pathfinder_redis:6379/0
+    - SKIP_MIGRATIONS=true
     depends_on:
-      - redis
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pathfinder_network
+
+
+networks:
+  pathfinder_network:
+    driver: bridge
