@@ -1,93 +1,63 @@
 # 🧭 Pathfinder API
 
-A Django-based RESTful service for creating graph nodes and finding paths between them. Includes support for asynchronous path-finding via Celery and Redis.
+A minimal Django + DRF micro‑service for creating nodes and finding paths between them.  Includes an optional **slow** path‑finder executed asynchronously with Celery.
 
 ---
 
-## 🚀 Features
+## Endpoints
 
-- Create nodes and connect them in-memory
-- Compute paths between nodes using BFS
-- REST API endpoints using Django REST Framework
-- Asynchronous path computation via Celery
-- PostgreSQL-backed persistent storage
-- Dockerized development environment
-
----
-
-## 📦 Tech Stack
-
-- Python 3.11
-- Django 4.x
-- Django REST Framework
-- PostgreSQL
-- Redis (for Celery broker and result backend)
-- Celery
-- Docker & Docker Compose
+| Purpose                | Method & Path                    | Notes                                                                |
+| ---------------------- | -------------------------------- | -------------------------------------------------------------------- |
+| Create / link a node   | **POST** `/app/node/`            | body `{ "name": "A", "child": "B" }` *(child optional)*              |
+| Fast path‑finding      | **GET**  `/app/path/`            | query `?FromNode=A&ToNode=C` → `{"path": ["A","B","C"]}` or `null`   |
+| Start slow path‑finder | **POST** `/app/path/slow`        | body `{ "FromNode": "A", "ToNode": "C" }` → returns `task_id`        |
+| Poll slow result       | **GET**  `/app/path/slow-result` | query `?task_id=<id>` → 202 while running, 200 with result when done |
 
 ---
 
-## ⚙️ Setup Instructions
+## Run locally (no Docker)
 
-### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/pathfinder-api.git
-cd pathfinder-api
+pip install -r requirements.txt
+python manage.py migrate && python manage.py runserver
 ```
 
-### 2. Build and Run with Docker
+If you need async tasks:
+
 ```bash
-docker-compose up --build
+celery -A PathfinderApi worker -l info   # broker defaults to redis://localhost:6379/0
 ```
-
-This will:
-- Start PostgreSQL and Redis
-- Run migrations and load test data
-- Start Django development server on `http://localhost:8000`
-- Start Celery worker
 
 ---
 
-## 🔌 REST API Endpoints
+## Tests (pytest)
 
-### `POST /create-node/`
-Create a new graph node.
-```json
-{
-  "name": "A"
-}
-```
+Tests run Celery **synchronously** and **store results in memory**, so no Redis/RabbitMQ is required:
 
-### `GET /find-path/?FromNode=A&ToNode=C`
-Returns a list of node names from A to C or `null` if no path exists.
-
-### `POST /slow-find-path/`
-Triggers asynchronous path-finding.
-```json
-{
-  "FromNode": "A",
-  "ToNode": "C"
-}
-```
-Response:
-```json
-{
-  "task_id": "<celery-task-id>"
-}
-```
-
-### `GET /get-slow-path-result/?task_id=<id>`
-Returns the status and result of the async path-finding task.
-
----
-
-## 🧪 Running Tests
 ```bash
-python manage.py test
+docker-compose -f dev.docker-compose.yml up -d db  # for the DB
+pip install -r requirements-dev.txt   # pytest, pytest-django, coverage …
+pytest -q                             # all green
 ```
-Tests are located in `yourapp/tests.py` and use Django’s test framework.
 
 ---
 
-## 🗃 Test Data
-Initial nodes A → B → C are preloaded from `test_data.json` via `loaddata`.
+## Quick Docker
+
+```bash
+docker-compose -f dev.docker-compose.yml up -d --build          # db, web, worker, redis
+```
+
+Web app at [http://localhost:8000/](http://localhost:8000/).
+
+---
+
+## Tech
+
+- Python 3.11 · Django 4 · DRF 3.15
+- Celery 5 (broker/result = Redis by default)
+- PostgreSQL or SQLite (via `DATABASE_URL` env)
+- Docker / Compose for one‑command dev setup
+
+---
+
