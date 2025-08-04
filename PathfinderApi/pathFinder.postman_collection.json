@@ -1,0 +1,119 @@
+{
+	"info": {
+		"_postman_id": "197b9d3c-38d3-4e65-9995-e24bf8597831",
+		"name": "pathFinder",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "18017178"
+	},
+	"item": [
+		{
+			"name": "CreateNode",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\":\"test3\",\r\n    \"child\": \"test2\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{baseURL}}/app/node/"
+			},
+			"response": []
+		},
+		{
+			"name": "findPath",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/app/path/?FromNode=test3&ToNode=test1",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"app",
+						"path",
+						""
+					],
+					"query": [
+						{
+							"key": "FromNode",
+							"value": "test3"
+						},
+						{
+							"key": "ToNode",
+							"value": "test1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "slow",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\"FromNode\": \"test3\",\r\n\"ToNode\": \"test1\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{baseURL}}/app/path/slow"
+			},
+			"response": []
+		},
+		{
+			"name": "getResult",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/app/path/slow-result?task_id=340dcada-5f84-466a-afd3-9fa410453d1d",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"app",
+						"path",
+						"slow-result"
+					],
+					"query": [
+						{
+							"key": "task_id",
+							"value": "340dcada-5f84-466a-afd3-9fa410453d1d"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "localhost:8000",
+			"type": "default"
+		}
+	]
+}
